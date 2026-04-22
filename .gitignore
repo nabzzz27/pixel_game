@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor / IDE
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Dependencies (if a package manager is added later)
+node_modules/
+
+# Build output (if a bundler is added later)
+dist/
+build/
+.cache/
+.parcel-cache/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Windows (cross-platform safety)
+Thumbs.db
+ehthumbs.db
+
+# Project-specific: not tracked per user request
+_phaser_tutorial/
+docs/

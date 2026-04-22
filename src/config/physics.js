@@ -1,0 +1,20 @@
+export const PHYSICS = {
+    gravity: 800,
+    runSpeed: 200,
+    crouchSpeedMul: 0.5,
+    jumpVel: 500,
+    maxJumps: 2,
+    dashSpeed: 700,
+    dashDurationMs: 200,
+    dashCooldownMs: 400,
+    stompBounceVel: 400,
+    enemyPatrolSpeed: 60,
+    maxHealth: 3,
+    hitIframesMs: 1000,
+    knockbackVelX: 500,
+    knockbackVelY: 200,
+    knockbackDurationMs: 300,
+    deathDelayMs: 800,
+    playerStandSize: { w: 66, h: 92 },
+    playerDuckSize: { w: 69, h: 71 }
+};
