@@ -20,10 +20,26 @@ export class GameScene extends Phaser.Scene {
 
         this.load.image('candy_tileset', 'assets/kenney_platformer/Candy expansion/sheet.png');
         this.load.tilemapTiledJSON('level1', 'assets/tilemaps/level1.json');
+
+        this.load.on('loaderror', (file) => {
+            if (file.key === 'level1_bg') {
+                // bg image missing — fall back to solid color (handled in create)
+            }
+        });
+        this.load.image('level1_bg', 'assets/backgrounds/level1_bg.png');
     }
 
     create() {
         const map = this.make.tilemap({ key: 'level1' });
+
+        if (this.textures.exists('level1_bg')) {
+            const bg = this.add.image(0, 0, 'level1_bg').setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
+            const scale = Math.max(800 / bg.width, 600 / bg.height);
+            bg.setScale(scale);
+        } else {
+            this.cameras.main.setBackgroundColor('#1a0f22');
+        }
+
         const tiles = map.addTilesetImage('candy', 'candy_tileset');
         map.createLayer('Background', tiles);
         const platforms = map.createLayer('Platforms', tiles);
