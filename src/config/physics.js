@@ -9,6 +9,7 @@ export const PHYSICS = {
     dashCooldownMs: 400,
     stompBounceVel: 400,
     enemyPatrolSpeed: 60,
+    mediumEnemyPatrolSpeed: 35,
     maxHealth: 3,
     hitIframesMs: 1000,
     knockbackVelX: 500,
@@ -16,5 +17,16 @@ export const PHYSICS = {
     knockbackDurationMs: 300,
     deathDelayMs: 800,
     playerStandSize: { w: 66, h: 92 },
-    playerDuckSize: { w: 69, h: 71 }
+    playerDuckSize: { w: 69, h: 71 },
+
+    // combat
+    stompDamage: 50,
+    bulletDamage: 35,
+    lightEnemyHP: 50,
+    mediumEnemyHP: 100,
+    bulletSpeed: 600,
+    bulletSpawnYOffset: 20,
+    bulletLifetimeMs: 2000,
+    fireCooldownMs: 200,
+    ammoPerPickup: 3
 };

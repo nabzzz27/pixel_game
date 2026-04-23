@@ -1,5 +1,6 @@
 import { PHYSICS } from '../config/physics.js';
 import { Enemy } from '../entities/Enemy.js';
+import { Bullet } from '../entities/Bullet.js';
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -11,9 +12,12 @@ export class GameScene extends Phaser.Scene {
         this.load.image('player_duck', 'assets/sprites/player_duck.png');
         this.load.image('ground', 'assets/sprites/ground.png');
         this.load.image('enemy_mochi', 'assets/sprites/enemy_mochi.png');
+        this.load.image('enemy_medium', 'assets/sprites/enemy_medium.png');
         this.load.image('heart_full', 'assets/sprites/heart_full.png');
         this.load.image('heart_empty', 'assets/sprites/heart_empty.png');
         this.load.image('ingredient_chicken', 'assets/sprites/ingredient_chicken.png');
+        this.load.image('bullet', 'assets/sprites/bullet.png');
+        this.load.image('ammo_pickup', 'assets/sprites/ammo_pickup.png');
     }
 
     create() {
@@ -33,11 +37,22 @@ export class GameScene extends Phaser.Scene {
         this.player.setCollideWorldBounds(true);
         this.physics.add.collider(this.player, ground);
 
-        this.enemy = new Enemy(this, 500, 400, 'enemy_mochi', PHYSICS.enemyPatrolSpeed, 150);
-        this.physics.add.collider(this.enemy, ground);
-        this.physics.add.overlap(this.player, this.enemy, this.onPlayerEnemyOverlap, null, this);
+        this.enemies = [
+            new Enemy(this, 500, 400, 'enemy_mochi', PHYSICS.enemyPatrolSpeed, 150, PHYSICS.lightEnemyHP),
+            new Enemy(this, 650, 400, 'enemy_medium', PHYSICS.mediumEnemyPatrolSpeed, 50, PHYSICS.mediumEnemyHP)
+        ];
 
-        this.ingredient = this.physics.add.image(740, 490, 'ingredient_chicken');
+        this.bullets = this.add.group();
+        this.groundGroup = ground;
+        this.physics.add.collider(this.bullets, ground, (bullet) => bullet.destroy());
+
+        for (const e of this.enemies) {
+            this.physics.add.collider(e, ground);
+            this.physics.add.overlap(this.player, e, this.onPlayerEnemyOverlap, null, this);
+            this.physics.add.overlap(this.bullets, e, this.onBulletEnemyHit, null, this);
+        }
+
+        this.ingredient = this.physics.add.image(770, 490, 'ingredient_chicken');
         this.ingredient.body.setAllowGravity(false);
         this.ingredient.body.setImmovable(true);
         this.tweens.add({
@@ -51,6 +66,20 @@ export class GameScene extends Phaser.Scene {
         this.physics.add.overlap(this.player, this.ingredient, this.onIngredientPickup, null, this);
         this.isLevelComplete = false;
 
+        this.ammoPickup = this.physics.add.image(320, 490, 'ammo_pickup');
+        this.ammoPickup.setScale(0.55);
+        this.ammoPickup.body.setAllowGravity(false);
+        this.ammoPickup.body.setImmovable(true);
+        this.tweens.add({
+            targets: this.ammoPickup,
+            y: this.ammoPickup.y - 10,
+            yoyo: true,
+            repeat: -1,
+            duration: 800,
+            ease: 'Sine.easeInOut'
+        });
+        this.physics.add.overlap(this.player, this.ammoPickup, this.onAmmoPickup, null, this);
+
         this.cursors = this.input.keyboard.createCursorKeys();
         this.wasd = this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -59,6 +88,7 @@ export class GameScene extends Phaser.Scene {
             right: Phaser.Input.Keyboard.KeyCodes.D
         });
         this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+        this.kKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
 
         this.jumpsUsed = 0;
         this.isDashing = false;
@@ -72,18 +102,32 @@ export class GameScene extends Phaser.Scene {
         this.knockbackUntil = 0;
         this.isDead = false;
 
+        this.ammo = 0;
+        this.fireCooldownUntil = 0;
+
         this.hearts = [];
         for (let i = 0; i < PHYSICS.maxHealth; i++) {
             const h = this.add.image(20 + i * 36, 20, 'heart_full').setOrigin(0, 0).setScale(0.55);
             h.setScrollFactor(0);
             this.hearts.push(h);
         }
+
+        this.ammoText = this.add.text(20, 60, 'AMMO: 0', {
+            fontSize: '18px',
+            color: '#ffd966',
+            fontStyle: 'bold'
+        }).setScrollFactor(0);
     }
 
     update() {
         if (this.isDead || this.isLevelComplete) return;
 
         const now = this.time.now;
+
+        // --- shooting (allowed in any state except dead) ---
+        if (Phaser.Input.Keyboard.JustDown(this.kKey) && this.ammo > 0 && now >= this.fireCooldownUntil) {
+            this.fireBullet();
+        }
 
         // --- dash state machine ---
         if (this.isDashing && now >= this.dashEndsAt) {
@@ -157,6 +201,44 @@ export class GameScene extends Phaser.Scene {
             this.player.setVelocityY(-PHYSICS.jumpVel);
             this.jumpsUsed++;
         }
+    }
+
+    fireBullet() {
+        const direction = this.player.flipX ? -1 : 1;
+        const bulletX = this.player.x + direction * 20;
+        const bulletY = this.player.body.bottom - PHYSICS.bulletSpawnYOffset;
+        const bullet = new Bullet(this, bulletX, bulletY, 'bullet', direction);
+        this.bullets.add(bullet);
+        this.ammo--;
+        this.fireCooldownUntil = this.time.now + PHYSICS.fireCooldownMs;
+        this.updateAmmoUI();
+    }
+
+    onBulletEnemyHit(bullet, enemy) {
+        if (!enemy.isAlive) return;
+        enemy.takeBullet();
+        bullet.destroy();
+    }
+
+    onAmmoPickup(_player, pickup) {
+        if (!pickup.body || !pickup.body.enable) return;
+        pickup.body.enable = false;
+        this.ammo += PHYSICS.ammoPerPickup;
+        this.updateAmmoUI();
+        this.tweens.killTweensOf(pickup);
+        this.tweens.add({
+            targets: pickup,
+            y: pickup.y - 40,
+            alpha: 0,
+            scale: 0.9,
+            duration: 300,
+            ease: 'Quad.easeOut',
+            onComplete: () => pickup.destroy()
+        });
+    }
+
+    updateAmmoUI() {
+        this.ammoText.setText(`AMMO: ${this.ammo}`);
     }
 
     isInvulnerable() {
@@ -241,7 +323,9 @@ export class GameScene extends Phaser.Scene {
         this.isDead = false;
         this.isDashing = false;
         this.jumpsUsed = 0;
+        this.ammo = 0;
         this.updateHealthUI();
+        this.updateAmmoUI();
     }
 
     updateHealthUI() {
@@ -272,4 +356,3 @@ export class GameScene extends Phaser.Scene {
         });
     }
 }
-

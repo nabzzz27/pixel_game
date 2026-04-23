@@ -1,5 +1,7 @@
+import { PHYSICS } from '../config/physics.js';
+
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene, x, y, texture, patrolSpeed, patrolRadius = 150) {
+    constructor(scene, x, y, texture, patrolSpeed, patrolRadius = 150, hp = PHYSICS.lightEnemyHP) {
         super(scene, x, y, texture);
         scene.add.existing(this);
         scene.physics.add.existing(this);
@@ -9,6 +11,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.patrolSpeed = patrolSpeed;
         this.patrolMinX = x - patrolRadius;
         this.patrolMaxX = x + patrolRadius;
+        this.maxHealth = hp;
+        this.currentHealth = hp;
         this.isAlive = true;
 
         this.setVelocityX(this.patrolSpeed);
@@ -27,11 +31,33 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
-    takeStomp() {
+    takeDamage(amount) {
         if (!this.isAlive) return;
+        this.currentHealth -= amount;
+
+        this.setTintFill(0xffffff);
+        this.scene.time.delayedCall(80, () => {
+            if (this.isAlive) this.clearTint();
+        });
+
+        if (this.currentHealth <= 0) {
+            this.die();
+        }
+    }
+
+    takeStomp() {
+        this.takeDamage(PHYSICS.stompDamage);
+    }
+
+    takeBullet() {
+        this.takeDamage(PHYSICS.bulletDamage);
+    }
+
+    die() {
         this.isAlive = false;
         this.setVelocity(0, 0);
         if (this.body) this.body.enable = false;
+        this.clearTint();
         this.scene.tweens.add({
             targets: this,
             scaleY: 0.2,
