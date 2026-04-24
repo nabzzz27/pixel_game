@@ -22,12 +22,30 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         super.preUpdate(time, delta);
         if (!this.isAlive) return;
 
+        // turn around at patrol radius
         if (this.x <= this.patrolMinX && this.body.velocity.x < 0) {
             this.setVelocityX(this.patrolSpeed);
             this.setFlipX(false);
-        } else if (this.x >= this.patrolMaxX && this.body.velocity.x > 0) {
+            return;
+        }
+        if (this.x >= this.patrolMaxX && this.body.velocity.x > 0) {
             this.setVelocityX(-this.patrolSpeed);
             this.setFlipX(true);
+            return;
+        }
+
+        // turn around at platform edge (ledge detection)
+        if (this.scene.platforms && this.body.blocked.down) {
+            const dir = Math.sign(this.body.velocity.x);
+            if (dir !== 0) {
+                const lookX = this.x + dir * (this.body.width / 2 + 4);
+                const lookY = this.body.bottom + 4;
+                const tile = this.scene.platforms.getTileAtWorldXY(lookX, lookY);
+                if (!tile) {
+                    this.setVelocityX(-dir * this.patrolSpeed);
+                    this.setFlipX(dir > 0);
+                }
+            }
         }
     }
 

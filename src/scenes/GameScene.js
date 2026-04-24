@@ -45,6 +45,7 @@ export class GameScene extends Phaser.Scene {
         map.createLayer('Background', tiles);
         const platforms = map.createLayer('Platforms', tiles);
         platforms.setCollisionBetween(1, 999);
+        this.platforms = platforms;
 
         this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
