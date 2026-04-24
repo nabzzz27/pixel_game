@@ -1,7 +1,6 @@
 export const PHYSICS = {
     gravity: 800,
     runSpeed: 200,
-    crouchSpeedMul: 0.5,
     jumpVel: 500,
     maxJumps: 2,
     dashSpeed: 700,
@@ -17,7 +16,6 @@ export const PHYSICS = {
     knockbackDurationMs: 300,
     deathDelayMs: 800,
     playerStandSize: { w: 66, h: 92 },
-    playerDuckSize: { w: 69, h: 71 },
 
     // combat
     stompDamage: 50,
@@ -28,5 +26,10 @@ export const PHYSICS = {
     bulletSpawnYOffset: 20,
     bulletLifetimeMs: 2000,
     fireCooldownMs: 200,
-    ammoPerPickup: 3
+    ammoPerPickup: 3,
+
+    // flying enemy
+    flyingEnemySpeed: 80,
+    flyingBoundsW: 300,
+    flyingBoundsH: 200
 };

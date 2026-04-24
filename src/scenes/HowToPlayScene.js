@@ -17,14 +17,14 @@ export class HowToPlayScene extends Phaser.Scene {
   Move         <-  ->   or  A  D
   Jump         SPACE    (press again in air = double jump)
   Dash         SHIFT    (invincible during dash)
-  Crouch       DOWN     or  S
   Shoot        K        (uses 1 ammo per shot)
   Stomp        land on an enemy from above
+  Pause        ESC
 
 DAMAGE
   Stomp        50 dmg
   Bullet       35 dmg
-  Light enemy  50 HP     (mochi)
+  Light enemy  50 HP     (mochi slime, fly)
   Heavy enemy  100 HP    (blocker)
 
 GOAL

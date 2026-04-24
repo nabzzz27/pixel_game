@@ -1,6 +1,7 @@
 import { PHYSICS } from '../config/physics.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
+import { FlyingEnemy } from '../entities/FlyingEnemy.js';
 
 export class GameScene extends Phaser.Scene {
     constructor() {
@@ -9,9 +10,9 @@ export class GameScene extends Phaser.Scene {
 
     preload() {
         this.load.image('player', 'assets/sprites/player.png');
-        this.load.image('player_duck', 'assets/sprites/player_duck.png');
         this.load.image('enemy_mochi', 'assets/sprites/enemy_mochi.png');
         this.load.image('enemy_medium', 'assets/sprites/enemy_medium.png');
+        this.load.image('enemy_fly', 'assets/sprites/enemy_fly.png');
         this.load.image('heart_full', 'assets/sprites/heart_full.png');
         this.load.image('heart_empty', 'assets/sprites/heart_empty.png');
         this.load.image('ingredient_chicken', 'assets/sprites/ingredient_chicken.png');
@@ -65,6 +66,8 @@ export class GameScene extends Phaser.Scene {
                 this.spawnEnemy(obj.x, obj.y, 'enemy_mochi', PHYSICS.enemyPatrolSpeed, 150, PHYSICS.lightEnemyHP, platforms);
             } else if (obj.name === 'medium') {
                 this.spawnEnemy(obj.x, obj.y, 'enemy_medium', PHYSICS.mediumEnemyPatrolSpeed, 80, PHYSICS.mediumEnemyHP, platforms);
+            } else if (obj.name === 'fly') {
+                this.spawnFlyingEnemy(obj.x, obj.y);
             } else if (obj.name === 'chicken') {
                 this.createIngredient(obj.x, obj.y);
             } else if (obj.name === 'ammo') {
@@ -84,8 +87,24 @@ export class GameScene extends Phaser.Scene {
             fontStyle: 'bold'
         }).setScrollFactor(0);
 
+        const cog = this.add.text(780, 20, '⚙', {
+            fontSize: '34px',
+            color: '#ffffff'
+        }).setOrigin(1, 0).setScrollFactor(0).setInteractive({ useHandCursor: true });
+        cog.on('pointerover', () => cog.setColor('#ffd966'));
+        cog.on('pointerout', () => cog.setColor('#ffffff'));
+        cog.on('pointerdown', () => this.openPause());
+
         this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
         this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+
+        this.input.keyboard.on('keydown-ESC', () => this.openPause());
+    }
+
+    openPause() {
+        if (this.scene.isActive('PauseScene')) return;
+        this.scene.pause();
+        this.scene.launch('PauseScene');
     }
 
     spawnEnemy(x, y, texture, patrolSpeed, patrolRadius, hp, platforms) {
@@ -94,6 +113,13 @@ export class GameScene extends Phaser.Scene {
         this.physics.add.collider(enemy, platforms);
         this.physics.add.overlap(this.player, enemy, (p, e) => this.player.onEnemyOverlap(e), null, this);
         this.physics.add.overlap(this.bullets, enemy, this.onBulletEnemyHit, null, this);
+    }
+
+    spawnFlyingEnemy(x, y) {
+        const fly = new FlyingEnemy(this, x, y, PHYSICS.lightEnemyHP);
+        this.enemies.push(fly);
+        this.physics.add.overlap(this.player, fly, (p, e) => this.player.onEnemyOverlap(e), null, this);
+        this.physics.add.overlap(this.bullets, fly, this.onBulletEnemyHit, null, this);
     }
 
     createIngredient(x, y) {

@@ -29,7 +29,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.dashEndsAt = 0;
         this.dashCooldownUntil = 0;
         this.dashDir = 1;
-        this.isCrouching = false;
 
         this.health = PHYSICS.maxHealth;
         this.invulnerableUntil = 0;
@@ -59,7 +58,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
 
         const dashPressed = Phaser.Input.Keyboard.JustDown(this.shiftKey);
-        if (dashPressed && !this.isDashing && !this.isCrouching && now >= this.dashCooldownUntil) {
+        if (dashPressed && !this.isDashing && now >= this.dashCooldownUntil) {
             this.isDashing = true;
             this.dashEndsAt = now + PHYSICS.dashDurationMs;
             const leftHeld = this.cursors.left.isDown || this.wasd.left.isDown;
@@ -79,36 +78,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // knockback stun
         if (now < this.knockbackUntil) return;
 
-        // crouch (mid-air allowed)
-        const onGround = this.body.blocked.down;
-        const crouchHeld = this.cursors.down.isDown || this.wasd.down.isDown;
-
-        if (crouchHeld && !this.isCrouching) {
-            this.isCrouching = true;
-            this.setTexture('player_duck');
-            this.body.setSize(PHYSICS.playerDuckSize.w, PHYSICS.playerDuckSize.h);
-        } else if (!crouchHeld && this.isCrouching) {
-            this.isCrouching = false;
-            this.setTexture('player');
-            this.body.setSize(PHYSICS.playerStandSize.w, PHYSICS.playerStandSize.h);
-        }
-
         // horizontal movement
         const left = this.cursors.left.isDown || this.wasd.left.isDown;
         const right = this.cursors.right.isDown || this.wasd.right.isDown;
-        const speed = this.isCrouching ? PHYSICS.runSpeed * PHYSICS.crouchSpeedMul : PHYSICS.runSpeed;
 
         if (left) {
-            this.setVelocityX(-speed);
+            this.setVelocityX(-PHYSICS.runSpeed);
             this.setFlipX(true);
         } else if (right) {
-            this.setVelocityX(speed);
+            this.setVelocityX(PHYSICS.runSpeed);
             this.setFlipX(false);
         } else {
             this.setVelocityX(0);
         }
 
         // jump + double-jump
+        const onGround = this.body.blocked.down;
         if (onGround && this.body.velocity.y >= 0) {
             this.jumpsUsed = 0;
         }
@@ -205,12 +190,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.tweens.killTweensOf(this);
         this.clearTint();
         this.setAlpha(1);
-
-        if (this.isCrouching) {
-            this.isCrouching = false;
-            this.setTexture('player');
-            this.body.setSize(PHYSICS.playerStandSize.w, PHYSICS.playerStandSize.h);
-        }
 
         this.body.enable = true;
         this.body.reset(this.spawnX, this.spawnY);
